@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { NetworkingStack } from "./networkingStack";
 import { ApplicationStack } from "./applicationStack";
 import { CommonResourceStack } from "./commonResourceStack";
+import { EcrStack } from "./ecrStack";
 
 config({ path: `.env.${process.env.APP_ENV || 'development'}` })
 
@@ -17,6 +18,16 @@ const appPort = parseInt(process.env.APP_PORT || "80");
 const app1ContainerImageTag = process.env.APP1_CONTAINER_IMAGE_TAG || "latest"; 
 
 const app = new App();
+
+const ecrStack = new EcrStack(
+  app,
+  `EcrStack`,
+  region,
+  environmentName,
+  projectName,
+  remoteBackendBucketName,
+  remoteBackendDynamoDBTableName,
+);
 
 const networkingStack = new NetworkingStack(
   app,
@@ -41,7 +52,6 @@ const commonResourceStack = new CommonResourceStack(
   route53HostedZoneName
 );
 
-
  new ApplicationStack(
   app,
   `Application`,
@@ -60,6 +70,7 @@ const commonResourceStack = new CommonResourceStack(
   appPort,
   appDomainName,
   route53HostedZoneName,
+  ecrStack.app1EcrRepositoryName,
   app1ContainerImageTag
 );
 

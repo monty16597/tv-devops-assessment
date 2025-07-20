@@ -1,7 +1,7 @@
 import { TerraformStack, S3Backend, TerraformOutput, Token } from "cdktf";
 import { Construct } from "constructs";
 import { AwsProvider } from "./.gen/providers/aws/provider";
-import { EcrRepository } from "./.gen/providers/aws/ecr-repository";
+import { DataAwsEcrRepository } from "./.gen/providers/aws/data-aws-ecr-repository";
 import { IamRole } from "./.gen/providers/aws/iam-role";
 import { IamPolicy } from "./.gen/providers/aws/iam-policy";
 import { IamPolicyAttachment } from "./.gen/providers/aws/iam-policy-attachment";
@@ -30,7 +30,8 @@ export class ApplicationStack extends TerraformStack {
     appPort: number = 80,
     appDomainName: string,
     route53HostedZoneName: string,
-    app1ContainerImageTag: string
+    app1EcrName: string,
+    app1ContainerImageTag: string = "latest"
   ) {
     super(scope, id);
 
@@ -48,15 +49,9 @@ export class ApplicationStack extends TerraformStack {
       region: region,
     });
 
-    // ECR Repository
-    const app1EcrRepository = new EcrRepository(this, "ecr_repository", {
-      name: `${projectName}-${environmentName}-app1`,
-      imageTagMutability: "MUTABLE",
-      forceDelete: true,
-      tags: {
-        "Environment": environmentName,
-        "Project": projectName
-      }
+    // Data Source for ECR Repository
+    const app1EcrRepository = new DataAwsEcrRepository(this, "ecr_repository", {
+      name: Token.asString(app1EcrName),
     });
 
     // IAM Role for ECS Task Execution
