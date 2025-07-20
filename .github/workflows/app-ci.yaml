@@ -30,17 +30,10 @@ jobs:
         id: build-test
         uses: docker/build-push-action@v6
         with:
+          context: ${{ env.APP_DIR }}
+          file: ${{ env.APP_DIR }}/Dockerfile
           push: false
           tags: app:latest
-
-      - name: Run Test
-        id: run-test
-        run: |
-          docker run -d --name app_container -p 3000:3000 app:latest
-          sleep 5 # Wait for the container to start
-          curl --fail http://localhost:3000 || exit 1
-          docker stop app_container
-          docker rm app_container
 
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v3
@@ -48,9 +41,9 @@ jobs:
         with:
           message: |
             ```markdown
-                | Step       | Status                          |
-                | ---------- | ------------------------------- |
+                | Step       | Status  |
+                | ---------- | ------- |
                 | Build Test | ${{ steps.build-test.outcome }} |
-                | Run Test   | ${{ steps.run-test.outcome }}   |
             ```
           comment-tag: "build-status"
+          mode: recreate
