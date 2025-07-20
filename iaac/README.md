@@ -273,13 +273,12 @@ This project includes GitHub Actions workflows for automating CI/CD:
 4.  **Adjust Workflow File Paths (if necessary)**:
     If your IaaC files are **not** in an `iaac` folder at the root of your repository (as this example assumes), you'll need to modify the `paths` in the `on.push` and `on.pull_request` sections of both `.github/workflows/iaac-ci.yaml` and `.github/workflows/iaac-cd.yaml` files. If your IaaC is at the root, simply remove the `paths` section.
 
-5.  **Push and Trigger Deployments**:
-
-      * Push your changes to the `main` branch of your repository. This will trigger the CD pipeline for the `development` environment.
-      * Create two more branches: `release/staging` and `release/production`. Push these branches to your repository. This will trigger the CD pipeline for the `staging` and `production` environments respectively.
-
-6.  **Update Environment Variables for CI/CD**:
+5. **Update Environment Variables for CI/CD**:
     Ensure the `.env.development`, `.env.staging`, and `.env.production` files within your `iaac` folder are correctly configured. They should follow the same structure as your local setup.
 
       * **Route 53**: Verify that `ROUTE53_HOSTED_ZONE_NAME` and `APP_DOMAIN_NAME` are updated to reflect your AWS account's Route 53 hosted zones.
       * **Remote State**: Confirm that `REMOTE_BACKEND_BUCKET_NAME` and `REMOTE_BACKEND_DYNAMODB_TABLE_NAME` match the S3 bucket and DynamoDB table you created for remote state management.
+6. **Push and Trigger Deployments**:
+
+      * Push your changes to the `main` branch of your repository. This will trigger the CD pipeline for the `development` environment.
+      * Create two more branches: `release/staging` and `release/production`. Push these branches to your repository. This will trigger the CD pipeline for the `staging` and `production` environments respectively.

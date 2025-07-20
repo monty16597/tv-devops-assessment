@@ -220,7 +220,10 @@ export class ApplicationStack extends TerraformStack {
     });
 
     const targetGroup = new LbTargetGroup(this, "load_balancer_target_group", {
-      name: `app1-target-group`,
+      lifecycle: {
+        createBeforeDestroy: true,
+      },
+      namePrefix: `app1-`,
       port: appPort,
       protocol: "HTTP",
       vpcId: Token.asString(vpcId),
