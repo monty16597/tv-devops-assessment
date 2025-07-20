@@ -41,6 +41,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.12.2"
+          terraform_wrapper: false
 
       - name: install cdktf
         run: |
