@@ -53,17 +53,6 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: cdktf get
 
-      - name: Generate Plan Networking
-        uses: hashicorp/terraform-cdk-action@v10
-        with:
-          cdktfVersion: 0.21.0
-          terraformVersion: 1.12.2
-          workingDirectory: ${{ env.APP_DIR }}
-          mode: plan-only
-          commentOnPr: false
-          stackName: Networking
-          githubToken: ${{ github.token }}
-
       - name: Apply Networking
         uses: hashicorp/terraform-cdk-action@v10
         with:
@@ -75,18 +64,6 @@ jobs:
           stackName: Networking
           githubToken: ${{ github.token }}
 
-      - name: Generate Plan CommonResource
-        uses: hashicorp/terraform-cdk-action@v10
-        with:
-          cdktfVersion: 0.21.0
-          terraformVersion: 1.12.2
-          workingDirectory: ${{ env.APP_DIR }}
-          mode: plan-only
-          commentOnPr: false
-          stackName: CommonResource
-          githubToken: ${{ github.token }}
-          cdktfArgs: --ignore-missing-stack-dependencies
-
       - name: Apply Plan CommonResource
         uses: hashicorp/terraform-cdk-action@v10
         with:
@@ -96,18 +73,6 @@ jobs:
           mode: auto-approve-apply
           commentOnPr: false
           stackName: CommonResource
-          githubToken: ${{ github.token }}
-          cdktfArgs: --ignore-missing-stack-dependencies
-
-      - name: Generate Plan Application
-        uses: hashicorp/terraform-cdk-action@v10
-        with:
-          cdktfVersion: 0.21.0
-          terraformVersion: 1.12.2
-          workingDirectory: ${{ env.APP_DIR }}
-          mode: plan-only
-          commentOnPr: false
-          stackName: Application
           githubToken: ${{ github.token }}
           cdktfArgs: --ignore-missing-stack-dependencies
 
