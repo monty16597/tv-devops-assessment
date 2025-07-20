@@ -17,7 +17,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  test:
+  Synth:
     environment:
       name: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
     runs-on: ubuntu-latest
