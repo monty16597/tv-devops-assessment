@@ -161,9 +161,6 @@ export class ApplicationStack extends TerraformStack {
 
     // ECS Task Definition
     const app1TaskDefinition = new EcsTaskDefinition(this, "ecs_task_definition", {
-      lifecycle: {
-        ignoreChanges: ["container_definitions[0].image"],
-      },
       family: `${projectName}-${environmentName}-task`,
       networkMode: "awsvpc",
       requiresCompatibilities: ["FARGATE"],
