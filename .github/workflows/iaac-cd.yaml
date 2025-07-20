@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - release/*
+      - main
     paths:
       - "iaac/**"
       - ".github/workflows/iaac-**.yaml"

@@ -123,7 +123,7 @@ ENV variables include:
    npm install
    cdktf get
    ```
-2. Edit the `.env` files to set your environment variables. Make sure to change Route53 Hosted Zone Name and application domain name as per your AWS account setup. This IaaC assumes you have a Route53 hosted zone already created.
+2. Edit the `.env` files to set your environment variables. Make sure to change Route53 Hosted Zone Name and application domain name as per your AWS account setup. This IaaC assumes you have a Route53 hosted zone already created. 
 3. Configure AWS CLI with your credentials.
    ```bash
    aws configure

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - release/*
+      - main
     paths:
       - "app/**"
       - ".github/workflows/app-**.yaml"

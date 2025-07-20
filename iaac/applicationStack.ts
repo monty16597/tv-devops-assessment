@@ -161,6 +161,9 @@ export class ApplicationStack extends TerraformStack {
 
     // ECS Task Definition
     const app1TaskDefinition = new EcsTaskDefinition(this, "ecs_task_definition", {
+      lifecycle: {
+        ignoreChanges: ["containerDefinitions[0].image"],
+      },
       family: `${projectName}-${environmentName}-task`,
       networkMode: "awsvpc",
       requiresCompatibilities: ["FARGATE"],
@@ -265,7 +268,7 @@ export class ApplicationStack extends TerraformStack {
       networkConfiguration: {
         subnets: Token.asList(privateSubnetIds),
         securityGroups: [securityGroup.id], // Replace with actual security group ID
-        assignPublicIp: true
+        assignPublicIp: false
       },
       loadBalancer: [
         {
