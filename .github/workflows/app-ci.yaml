@@ -15,7 +15,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  test:
+  Image-Build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
