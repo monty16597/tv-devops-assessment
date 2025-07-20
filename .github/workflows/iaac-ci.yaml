@@ -48,17 +48,20 @@ jobs:
 
       - name: Install NPM Dependencies
         working-directory: ${{ env.APP_DIR }}
-        run: npm install
+        run: yarn install
 
       - name: Install CDK Dependencies
         working-directory: ${{ env.APP_DIR }}
-        run: cdktf get
+        run: npx cdktf-cli get
 
-      - name: Build Test
+      - name: Test the synth
+        uses: hashicorp/terraform-cdk-action@v10
         id: build-test
-        run: cdktf synth
-        env:
-          APP_ENV: ${{ env.APP_ENV }}
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: synth-only
 
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v3
