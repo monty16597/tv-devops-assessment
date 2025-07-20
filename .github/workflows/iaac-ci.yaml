@@ -65,16 +65,3 @@ jobs:
           mode: synth-only
           githubToken: ${{ github.token }}
           suppressOutput: true
-
-      - name: Comment on Pull Request
-        uses: thollander/actions-comment-pull-request@v3
-        if: always()
-        with:
-          message: |
-            ```markdown
-                | Step       | Status  |
-                | ---------- | ------- |
-                | Build Test | ${{ steps.build-test.outcome }} |
-            ```
-          comment-tag: "build-status"
-          mode: recreate
