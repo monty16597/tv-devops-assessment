@@ -1,0 +1,64 @@
+import { App } from "cdktf";
+import { config } from 'dotenv';
+import { NetworkingStack } from "./networkingStack";
+import { ApplicationStack } from "./applicationStack";
+import { CommonResourceStack } from "./commonResourceStack";
+
+config({ path: `.env.${process.env.APP_ENV || 'development'}` })
+
+const projectName = process.env.PROJECT_NAME || "local-project";
+const region = process.env.AWS_REGION || "ca-central-1";
+const environmentName = process.env.APP_ENV || "development";
+const remoteBackendBucketName = process.env.REMOTE_BACKEND_BUCKET_NAME;
+const remoteBackendDynamoDBTableName = process.env.REMOTE_BACKEND_DYNAMODB_TABLE_NAME;
+const appDomainName = process.env.APP_DOMAIN_NAME || "app1.dev.devops-blogs.net";
+const route53HostedZoneName = process.env.ROUTE53_HOSTED_ZONE_NAME || "dev.devops-blogs.net";
+const appPort = parseInt(process.env.APP_PORT || "80");
+
+const app = new App();
+
+const networkingStack = new NetworkingStack(
+  app,
+  `Networking`,
+  region,
+  environmentName,
+  projectName,
+  remoteBackendBucketName,
+  remoteBackendDynamoDBTableName,
+);
+
+const commonResourceStack = new CommonResourceStack(
+  app,
+  `CommonResource`,
+  region,
+  environmentName,
+  projectName,
+  remoteBackendBucketName,
+  remoteBackendDynamoDBTableName,
+  networkingStack.vpcId,
+  networkingStack.publicSubnetIds,
+  route53HostedZoneName
+);
+
+
+ new ApplicationStack(
+  app,
+  `Application`,
+  region,
+  environmentName,
+  projectName,
+  remoteBackendBucketName,
+  remoteBackendDynamoDBTableName,
+  networkingStack.vpcId,
+  networkingStack.privateSubnetIds,
+  commonResourceStack.loadBalancerDnsName,
+  commonResourceStack.loadBalancerZoneId,
+  commonResourceStack.loadBalancerListenerHttpsArn,
+  commonResourceStack.loadBalancerSecurityGroupId,
+  commonResourceStack.ecsClusterName,
+  appPort,
+  appDomainName,
+  route53HostedZoneName
+);
+
+app.synth();

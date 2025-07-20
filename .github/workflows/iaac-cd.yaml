@@ -1,0 +1,118 @@
+name: IaaC Continuous Deployment
+on:
+  push:
+    branches:
+      - release/*
+    paths:
+      - "iaac/**"
+      - ".github/workflows/iaac-**.yaml"
+env:
+  APP_DIR: ${{ github.workspace }}/iaac
+  APP_ENV: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    environment:
+      name: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.12.2"
+          terraform_wrapper: false
+
+      - name: install cdktf
+        run: |
+          npm install -g cdktf-cli
+
+      - name: Install NPM Dependencies
+        working-directory: ${{ env.APP_DIR }}
+        run: npm install
+
+      - name: Install CDK Dependencies
+        working-directory: ${{ env.APP_DIR }}
+        run: cdktf get
+
+      - name: Generate Plan Networking
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: plan-only
+          commentOnPr: false
+          stackName: Networking
+
+      - name: Apply Networking
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: Networking
+
+      - name: Generate Plan CommonResource
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: plan-only
+          commentOnPr: false
+          stackName: CommonResource
+          cdktfArgs: --ignore-missing-stack-dependencies
+
+      - name: Apply Plan CommonResource
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: CommonResource
+          cdktfArgs: --ignore-missing-stack-dependencies
+
+      - name: Generate Plan Application
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: plan-only
+          commentOnPr: false
+          stackName: Application
+          cdktfArgs: --ignore-missing-stack-dependencies
+
+      - name: Apply Plan Application
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: Application
+          cdktfArgs: --ignore-missing-stack-dependencies
