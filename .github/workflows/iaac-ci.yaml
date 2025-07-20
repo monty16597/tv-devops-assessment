@@ -63,6 +63,8 @@ jobs:
           terraformVersion: 1.12.2
           workingDirectory: ${{ env.APP_DIR }}
           mode: synth-only
+          githubToken: ${{ github.token }}
+          suppressOutput: true
 
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v3

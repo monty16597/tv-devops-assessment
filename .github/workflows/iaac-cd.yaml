@@ -39,6 +39,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.12.2"
+          terraform_wrapper: false
 
       - name: install cdktf
         run: |
@@ -53,19 +54,65 @@ jobs:
         run: cdktf get
 
       - name: Generate Plan Networking
-        run: cdktf plan Networking
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: plan-only
+          commentOnPr: false
+          stackName: Networking
 
-      - name: Apply Plan Networking
-        run: cdktf deploy Networking --auto-approve
+      - name: Apply Networking
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: Networking
 
       - name: Generate Plan CommonResource
-        run: cdktf plan CommonResource
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: plan-only
+          commentOnPr: false
+          stackName: CommonResource
+          cdktfArgs: --ignore-missing-stack-dependencies
 
       - name: Apply Plan CommonResource
-        run: cdktf deploy CommonResource --ignore-missing-stack-dependencies --auto-approve
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: CommonResource
+          cdktfArgs: --ignore-missing-stack-dependencies
 
       - name: Generate Plan Application
-        run: cdktf plan Application
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: plan-only
+          commentOnPr: false
+          stackName: Application
+          cdktfArgs: --ignore-missing-stack-dependencies
 
       - name: Apply Plan Application
-        run: cdktf deploy Application --ignore-missing-stack-dependencies --auto-approve
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.APP_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: Application
+          cdktfArgs: --ignore-missing-stack-dependencies
