@@ -1,5 +1,5 @@
 name: App Continuous Deployment
-run-name: Deploy ${{ github.sha }} to ${{ github.ref_name }}
+run-name: Deploy ${{ github.sha::7 }} to ${{ github.ref_name }}
 on:
   push:
     branches:
