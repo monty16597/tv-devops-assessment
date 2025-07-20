@@ -2,7 +2,6 @@ import { TerraformStack, S3Backend } from "cdktf";
 import { Construct } from "constructs";
 import { AwsProvider } from "./.gen/providers/aws/provider";
 import { DataAwsAvailabilityZones } from "./.gen/providers/aws/data-aws-availability-zones";
-import { S3Bucket } from "./.gen/providers/aws/s3-bucket";
 import { Vpc } from "./.gen/modules/vpc";
 
 export class NetworkingStack extends TerraformStack {
@@ -77,17 +76,6 @@ export class NetworkingStack extends TerraformStack {
       tags: {
         "Environment": environmentName,
         "Project": projectName
-      }
-    });
-
-    new S3Bucket(this, "networking_state_bucket", {
-      bucket: remoteBackendBucketName,
-      forceDestroy: true,
-      acl: "private",
-      tags: {
-        "Environment": environmentName,
-        "Project": projectName,
-        "ManagedBy": "CDKTF"
       }
     });
 
