@@ -19,7 +19,7 @@ permissions:
 jobs:
   Ecr:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name }}
+    environment: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -68,7 +68,7 @@ jobs:
   Build:
     needs: Ecr
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name }}
+    environment: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -101,7 +101,7 @@ jobs:
   Deploy:
     needs: Build
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
+    environment: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
