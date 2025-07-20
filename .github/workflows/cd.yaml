@@ -3,8 +3,9 @@ run-name: CD running for ${{ github.sha }} on ${{ github.ref_name }}
 on:
   push:
     branches:
-      - release/*
       - main
+      - staging
+      - production
 
 env:
   APP_DIR: ${{ github.workspace }}/app
@@ -18,7 +19,7 @@ permissions:
 jobs:
   Ecr:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
+    environment: ${{ github.ref_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -67,7 +68,7 @@ jobs:
   Build:
     needs: Ecr
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
+    environment: ${{ github.ref_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

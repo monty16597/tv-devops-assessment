@@ -10,72 +10,14 @@ The infrastructure is organized into three main stacks to ensure modularity and 
 
 These stacks are designed to be deployed in a specific order: Networking first, then Common Resources, and finally the Application Stack, as the latter stacks depend on resources created in the former.
 
-### Stack and Resource Graphs
-
-Here's a visual representation of the stacks and the resources within them:
+### Stacks
 
 ```mermaid
-graph TD
-    NetworkingStack[Networking Stack]
-    CommonResourcesStack[Common Resources Stack]
-    ApplicationStack[Application Stack]
-    NetworkingStack --> CommonResourcesStack
-    CommonResourcesStack --> ApplicationStack
+graph TD;
+    A[Networking Stack] --> B[Common Resources Stack];
+    B --> C[Application Stack];
+    E[ECR Stack] --> C;
 
-    subgraph NetworkingStack
-        direction TB
-        VPC[Virtual Private Cloud - VPC]
-        PUBSUBNETS[Public Subnets]
-        PRIVSUBNETS[Private Subnets]
-        NATGW[NAT Gateway]
-        INTERNETGW[Internet Gateway]
-        ROUTETABLES[Route Tables]
-
-        VPC --Manages--> PUBSUBNETS
-        VPC --Manages--> PRIVSUBNETS
-        INTERNETGW --Created In--> VPC
-        NATGW --Created In--> PUBSUBNETS
-        PUBSUBNETS --Associated With--> ROUTETABLES
-        PRIVSUBNETS --Associated With--> ROUTETABLES
-        ROUTETABLES --Routes To--> NATGW
-        ROUTETABLES --Routes To--> INTERNETGW
-
-    end
-
-    subgraph CommonResourcesStack
-        direction TB
-        ACM[AWS Certificate Manager - ACM Certificate]
-        ROUTE53[Route 53 Zone]
-        ECS[Elastic Container Service - ECS Cluster]
-        ALBSECURITYGROUP[Application Load Balancer - ALB Security Group]
-        ALB[Application Load Balancer - ALB]
-        ALBHTTPSLISTENER[ALB HTTPS Listener]
-        ALBHTTPLISTENER[ALB HTTP Listener]
-        ALBHTTPTOHTTPS[ALB HTTP to HTTPS Redirect Rule]
-
-        ALB --Needs--> ALBSECURITYGROUP
-        ALB --Has--> ALBHTTPSLISTENER
-        ALB --Has--> ALBHTTPLISTENER
-        ALBHTTPLISTENER --Has--> ALBHTTPTOHTTPS
-        ACM --Domain Validation--> ROUTE53
-        ACM --Attached to--> ALBHTTPSLISTENER
-    end
-
-    subgraph ApplicationStack
-        direction TB
-        ECR[Elastic Container Registry - ECR Repository]
-        ECSTASK[Task Definition]
-        ECSFARGATE[ECS Fargate Service]
-        ECSSECURITYGROUP[ECS Service Security Group]
-        ECSTASKROLE[ECS Task Roles and Policies]
-        TARGETGROUP[Target Group]
-        ROUTE53DNS[App specific Route 53 DNS Record for ALB]
-        ECSFARGATE --Needs--> ECSTASK
-        ECSFARGATE --Update Targets into--> TARGETGROUP
-        ECSFARGATE --Requires Container URL from--> ECR
-        ECSFARGATE --Needs--> ECSTASKROLE
-        ECSSECURITYGROUP --Has--> ECSFARGATE
-    end
 ```
 
 ### File Structure
@@ -86,6 +28,7 @@ The project files are organized as follows:
 app-iaac/
 ├── main.ts               # Entry point for the CDKTF application. Initializes all stacks.
 ├── applicationStack.ts   # Defines the Application Stack.
+├── ecrStack.ts           # Defines the ECR Stack for managing Docker container images.
 ├── commonResourceStack.ts # Defines the Common Resources Stack.
 ├── networkingStack.ts    # Defines the Networking Stack.
 ├── .env.development      # Environment variables for the development environment.
@@ -116,7 +59,12 @@ app-iaac/
       * Sets up an HTTPS listener on the ALB for secure communication and an HTTP listener with a redirection rule to automatically forward HTTP traffic to HTTPS.
       * Validates ACM certificates using DNS records within Route 53.
 
-3.  **Application Stack**:
+3.  **ECR Stack**:
+      * Manages the Elastic Container Registry (ECR) for storing Docker images.
+      * Defines ECR repositories for each application component.
+      * Configures lifecycle policies for image retention and cleanup.
+
+4.  **Application Stack**:
 
       * Defines the core of your application deployment:
           * **ECS Fargate Service**: Runs and scales your containerized application without managing servers.
@@ -135,13 +83,14 @@ These files store environment-specific configurations:
 
 Common environment variables found in these files include:
 
-  * `PROJECT_NAME`: A unique identifier for your project.
   * `APP_ENV`: Specifies the deployment environment (e.g., `development`, `staging`, `production`).
+  * `AWS_REGION`: The AWS region where resources will be deployed (e.g., `us-east-1`).
+  * `PROJECT_NAME`: A unique identifier for your project.
   * `REMOTE_BACKEND_BUCKET_NAME`: The S3 bucket used for storing Terraform's state remotely.
   * `REMOTE_BACKEND_DYNAMODB_TABLE_NAME`: The DynamoDB table used for state locking to prevent concurrent modifications.
-  * `ROUTE53_HOSTED_ZONE_NAME`: The Route 53 hosted zone where DNS records for your application will be managed.
   * `APP_PORT`: The port on which your application runs.
   * `APP_DOMAIN_NAME`: The domain name assigned to your application.
+  * `ROUTE53_HOSTED_ZONE_NAME`: The Route 53 hosted zone where DNS records for your application will be managed.
 
 ### Installation and Usage on Local Machine
 
@@ -193,87 +142,27 @@ Before you begin, ensure you have the following installed:
         --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
     ```
 
-5.  **Deploy the Infrastructure**:
-    Specify the `APP_ENV` variable to indicate which environment you are deploying to (e.g., `development`, `staging`, `production`), then run:
+5.  **Update .env Files**:
+    Ensure the `.env` files in the `iaac` directory are updated with your specific values, including `ROUTE53_HOSTED_ZONE_NAME` and `APP_DOMAIN_NAME`.
+
+6.  **Deploy the Infrastructure**:
+    Specify the `APP_ENV` variable to indicate which environment you are deploying to (e.g., `development`, `staging`, `production`) and the `APP1_CONTAINER_IMAGE_TAG` variable for the Docker image tag, then run:
 
     ```bash
-    APP_ENV=development cdktf deploy Application Networking CommonResource
+    APP_ENV=development APP1_CONTAINER_IMAGE_TAG=<GITHUB_COMMIT_HASH> cdktf deploy Application Networking CommonResource EcrStack
     ```
 
-    This command will synthesize the Terraform code and then apply it to deploy the specified stacks in order.
-
-6.  **Destroy the Infrastructure**:
-    To remove the deployed infrastructure, use:
-
-    ```bash
-    APP_ENV=development cdktf destroy Application Networking CommonResource
-    ```
-
-7.  **List Stacks**:
-    To see a list of available stacks:
-
-    ```bash
-    APP_ENV=development cdktf list
-    ```
-
-8.  **Synthesize Terraform Code**:
-    To generate the Terraform `.tf.json` files without deploying:
-
-    ```bash
-    APP_ENV=development cdktf synth
-    ```
-
-9.  **Check Generated Terraform Code**:
-    To view the planned changes before applying:
-
-    ```bash
-    APP_ENV=development cdktf diff <stack-name>
-    ```
-
-10. **Change Environment**:
+7.  **Deploy in other Environment**:
     To deploy to a different environment (e.g., staging), first clear the `cdktf.out` directory (where synthesized Terraform code is stored), then change the `APP_ENV` variable and re-run the deploy command:
 
     ```bash
     rm -rf cdktf.out
-    APP_ENV=staging cdktf deploy Application Networking CommonResource
+    APP_ENV=staging APP1_CONTAINER_IMAGE_TAG=<GITHUB_COMMIT_HASH> cdktf deploy Application Networking CommonResource EcrStack
     ```
+    
+8.  **Destroy the Infrastructure**:
+    To remove the deployed infrastructure, use:
 
-### CI/CD (Continuous Integration/Continuous Deployment)
-
-This project includes GitHub Actions workflows for automating CI/CD:
-
-  * `.github/workflows/iaac-ci.yaml`: Configures the Continuous Integration (CI) pipeline. It runs on pull requests to build and test the IaaC code, including performing a `cdktf synth`.
-  * `.github/workflows/iaac-cd.yaml`: Configures the Continuous Deployment (CD) pipeline. It runs on pushes to specific branches to deploy the IaaC code to AWS.
-
-#### Steps for CI/CD Setup
-
-1.  **Create GitHub Environments**:
-    In your GitHub repository settings, create three environments:
-
-      * `development`
-      * `staging`
-      * `production`
-
-2.  **Add AWS Credentials to GitHub Secrets**:
-    For each of the above GitHub environments, add the following secrets:
-
-      * `AWS_ACCESS_KEY_ID`
-      * `AWS_SECRET_ACCESS_KEY`
-
-3.  **Add Environment Variables to GitHub Environments**:
-    Also, for each GitHub environment, add the following environment variable:
-
-      * `AWS_REGION`: e.g., `us-east-1`
-
-4.  **Adjust Workflow File Paths (if necessary)**:
-    If your IaaC files are **not** in an `iaac` folder at the root of your repository (as this example assumes), you'll need to modify the `paths` in the `on.push` and `on.pull_request` sections of both `.github/workflows/iaac-ci.yaml` and `.github/workflows/iaac-cd.yaml` files. If your IaaC is at the root, simply remove the `paths` section.
-
-5. **Update Environment Variables for CI/CD**:
-    Ensure the `.env.development`, `.env.staging`, and `.env.production` files within your `iaac` folder are correctly configured. They should follow the same structure as your local setup.
-
-      * **Route 53**: Verify that `ROUTE53_HOSTED_ZONE_NAME` and `APP_DOMAIN_NAME` are updated to reflect your AWS account's Route 53 hosted zones.
-      * **Remote State**: Confirm that `REMOTE_BACKEND_BUCKET_NAME` and `REMOTE_BACKEND_DYNAMODB_TABLE_NAME` match the S3 bucket and DynamoDB table you created for remote state management.
-6. **Push and Trigger Deployments**:
-
-      * Push your changes to the `main` branch of your repository. This will trigger the CD pipeline for the `development` environment.
-      * Create two more branches: `release/staging` and `release/production`. Push these branches to your repository. This will trigger the CD pipeline for the `staging` and `production` environments respectively.
+    ```bash
+    APP_ENV=development APP1_CONTAINER_IMAGE_TAG=<GITHUB_COMMIT_HASH> cdktf destroy Application Networking CommonResource EcrStack
+    ```

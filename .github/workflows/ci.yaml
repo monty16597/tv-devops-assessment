@@ -4,7 +4,8 @@ on:
   pull_request:
     branches:
       - main
-      - release/*
+      - staging
+      - production
 env:
   APP_DIR: ${{ github.workspace }}/app
   INFRA_DIR: ${{ github.workspace }}/iaac
@@ -17,7 +18,7 @@ permissions:
 jobs:
   Synth-Test:
     environment:
-      name: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
+      name: ${{ github.ref_name }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
