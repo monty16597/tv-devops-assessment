@@ -1,15 +1,13 @@
-name: IaaC Continuous Integration
+name: CI
+run-name: CI running for ${{ github.event.pull_request.number }} on ${{ github.ref_name }}
 on:
   pull_request:
     branches:
-      - release/*
       - main
-    paths:
-      - "iaac/**"
-      - ".github/workflows/iaac-**.yaml"
+      - release/*
 env:
-  APP_DIR: ${{ github.workspace }}/iaac
-  APP_ENV: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
+  APP_DIR: ${{ github.workspace }}/app
+  INFRA_DIR: ${{ github.workspace }}/iaac
 
 permissions:
   contents: read
@@ -17,7 +15,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  Synth:
+  Synth-Test:
     environment:
       name: ${{ github.ref_name == 'release/production' && 'production' || github.ref_name == 'release/staging' && 'staging' || 'development' }}
     runs-on: ubuntu-latest
@@ -48,11 +46,11 @@ jobs:
           npm install -g cdktf-cli
 
       - name: Install NPM Dependencies
-        working-directory: ${{ env.APP_DIR }}
+        working-directory: ${{ env.INFRA_DIR }}
         run: yarn install
 
       - name: Install CDK Dependencies
-        working-directory: ${{ env.APP_DIR }}
+        working-directory: ${{ env.INFRA_DIR }}
         run: npx cdktf-cli get
 
       - name: Test the synth
@@ -61,7 +59,41 @@ jobs:
         with:
           cdktfVersion: 0.21.0
           terraformVersion: 1.12.2
-          workingDirectory: ${{ env.APP_DIR }}
+          workingDirectory: ${{ env.INFRA_DIR }}
           mode: synth-only
           githubToken: ${{ github.token }}
           suppressOutput: true
+
+  Image-Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Test
+        id: build-test
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.APP_DIR }}
+          file: ${{ env.APP_DIR }}/Dockerfile
+          push: false
+          tags: app:latest
+
+      - name: Comment on Pull Request
+        uses: thollander/actions-comment-pull-request@v3
+        if: always()
+        with:
+          message: |
+            ```markdown
+                | Step       | Status  |
+                | ---------- | ------- |
+                | Build Test | ${{ steps.build-test.outcome }} |
+            ```
+          comment-tag: "build-status"
+          mode: recreate

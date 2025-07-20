@@ -29,7 +29,8 @@ export class ApplicationStack extends TerraformStack {
     ecsClusterName: string,
     appPort: number = 80,
     appDomainName: string,
-    route53HostedZoneName: string
+    route53HostedZoneName: string,
+    app1ContainerImageTag: string
   ) {
     super(scope, id);
 
@@ -41,7 +42,6 @@ export class ApplicationStack extends TerraformStack {
       encrypt: true,
       dynamodbTable: `${remoteBackendDynamoDBTableName}`,
     });
-
 
     // Providers
     new AwsProvider(this, "aws", {
@@ -58,7 +58,6 @@ export class ApplicationStack extends TerraformStack {
         "Project": projectName
       }
     });
-
 
     // IAM Role for ECS Task Execution
     const app1TaskExecutionRole = new IamRole(this, "ecs/task-execution", {
@@ -171,7 +170,7 @@ export class ApplicationStack extends TerraformStack {
       containerDefinitions: JSON.stringify([
         {
           name: "app",
-          image: `${app1EcrRepository.repositoryUrl}:latest`,
+          image: `${app1EcrRepository.repositoryUrl}:${app1ContainerImageTag}`,
           cpu: 256,
           memory: 512,
           essential: true,

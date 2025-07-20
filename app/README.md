@@ -32,7 +32,7 @@ Files:
 - Make sure you have successfully deployed IaaC stacks as per the instructions in `iaac/README.md`.
 
 ### Steps
-- Create three diifferent environments in Github:
+- Create three diifferent environments in Github Repo Settings:
   - `development`
   - `staging`
   - `production`

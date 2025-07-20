@@ -174,15 +174,10 @@ Before you begin, ensure you have the following installed:
     Set up your AWS credentials for the AWS CLI:
 
     ```bash
-    aws configure
-    # Enter your AWS Access Key ID, Secret Access Key, region (e.g., us-east-1), and output format.
+    export AWS_ACCESS_KEY_ID=your_access_key_id
+    export AWS_SECRET_ACCESS_KEY=your_secret_access_key
     ```
 
-    If you use multiple AWS profiles, specify which one to use:
-
-    ```bash
-    export AWS_PROFILE=your-profile-name
-    ```
 
 4.  **Create Remote State Management Resources (if not already created)**:
     Create the S3 bucket and DynamoDB table for Terraform's remote state management. The names should match those defined in your `.env` files.

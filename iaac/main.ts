@@ -14,6 +14,7 @@ const remoteBackendDynamoDBTableName = process.env.REMOTE_BACKEND_DYNAMODB_TABLE
 const appDomainName = process.env.APP_DOMAIN_NAME || "app1.dev.devops-blogs.net";
 const route53HostedZoneName = process.env.ROUTE53_HOSTED_ZONE_NAME || "dev.devops-blogs.net";
 const appPort = parseInt(process.env.APP_PORT || "80");
+const app1ContainerImageTag = process.env.APP1_CONTAINER_IMAGE_TAG || "latest"; 
 
 const app = new App();
 
@@ -58,7 +59,8 @@ const commonResourceStack = new CommonResourceStack(
   commonResourceStack.ecsClusterName,
   appPort,
   appDomainName,
-  route53HostedZoneName
+  route53HostedZoneName,
+  app1ContainerImageTag
 );
 
 app.synth();

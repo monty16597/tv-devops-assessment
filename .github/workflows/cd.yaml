@@ -1,16 +1,14 @@
-name: App Continuous Deployment
-run-name: Deploy ${{ github.sha }} to ${{ github.ref_name }}
+name: CD
+run-name: CD running for ${{ github.sha }} on ${{ github.ref_name }}
 on:
   push:
     branches:
       - release/*
       - main
-    paths:
-      - "app/**"
-      - ".github/workflows/app-**.yaml"
 
 env:
   APP_DIR: ${{ github.workspace }}/app
+  INFRA_DIR: ${{ github.workspace }}/iaac
   CONTAINER_IMAGE_TAG: ${{ github.sha }}
 
 permissions:
@@ -42,8 +40,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Test
-        id: build-test
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.APP_DIR }}
@@ -66,26 +63,38 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
 
-      - name: Download task definition
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.12.2"
+          terraform_wrapper: false
+
+      - name: install cdktf
         run: |
-          aws ecs describe-task-definition --task-definition ${{ vars.ECS_TASK_DEFINITION_NAME }} --query taskDefinition > task-definition.json
+          npm install -g cdktf-cli
 
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: app
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ vars.AWS_ECR_REPO_NAME }}:${{ github.sha }}
+      - name: Install NPM Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: yarn install
 
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      - name: Install CDK Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: npx cdktf-cli get
+
+      - name: Apply IaaC changes
+        uses: hashicorp/terraform-cdk-action@v10
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ vars.ECS_SERVICE_NAME }}
-          cluster: ${{ vars.ECS_CLUSTER_NAME }}
-          wait-for-service-stability: true
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.INFRA_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: "*"
+          githubToken: ${{ github.token }}
+        env:
+          APP1_CONTAINER_IMAGE_TAG: ${{ github.sha }}
