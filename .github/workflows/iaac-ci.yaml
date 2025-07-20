@@ -46,11 +46,13 @@ jobs:
         run: |
           npm install -g cdktf-cli
 
-      - name: Install Dependencies
+      - name: Install NPM Dependencies
         working-directory: ${{ env.APP_DIR }}
-        run: |
-          npm install
-          cdktf get
+        run: npm install
+
+      - name: Install CDK Dependencies
+        working-directory: ${{ env.APP_DIR }}
+        run: cdktf get
 
       - name: Build Test
         id: build-test
