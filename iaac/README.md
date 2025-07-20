@@ -148,7 +148,7 @@ ENV variables include:
    ```bash
    APP_ENV=development cdktf deploy Application Networking CommonResource
    ```
-6. To destroy the infrastructure, run:
+6. If you want to destroy the infrastructure, run:
    ```bash
    APP_ENV=development cdktf destroy Application Networking CommonResource
    ```
@@ -157,7 +157,7 @@ ENV variables include:
    APP_ENV=development cdktf list
    ```
 
-8. To view the generated Terraform code:
+8. To synthesize the Terraform code:
    ```bash
    APP_ENV=development cdktf synth
    ```
