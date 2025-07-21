@@ -26,6 +26,7 @@ export class CommonResourceStack extends TerraformStack {
     remoteBackendDynamoDBTableName: string | undefined,
     vpcId: string,
     publicSubnetIds: string,
+    appDomainName: string,
     route53HostedZoneName: string
   ) {
     super(scope, id);
@@ -46,14 +47,17 @@ export class CommonResourceStack extends TerraformStack {
 
     // Route53 Zone Data Source
     const zone = new DataAwsRoute53Zone(this, "route53_zone", {
-      name: `dev.devops-blogs.net`,
+      name: `${route53HostedZoneName}`,
       privateZone: false,
     });
 
 
     // ACM Certificate
     const acmCertificate = new AcmCertificate(this, "acm_certificate", {
-      domainName: `*.${route53HostedZoneName}`,
+      lifecycle: {
+        createBeforeDestroy: true,
+      },
+      domainName: `${appDomainName}`,
       validationMethod: "DNS",
       tags: {
         "Environment": environmentName,

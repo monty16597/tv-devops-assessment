@@ -12,8 +12,8 @@ const region = process.env.AWS_REGION || "ca-central-1";
 const environmentName = process.env.APP_ENV || "development";
 const remoteBackendBucketName = process.env.REMOTE_BACKEND_BUCKET_NAME;
 const remoteBackendDynamoDBTableName = process.env.REMOTE_BACKEND_DYNAMODB_TABLE_NAME;
-const appDomainName = process.env.APP_DOMAIN_NAME || "app1.dev.devops-blogs.net";
-const route53HostedZoneName = process.env.ROUTE53_HOSTED_ZONE_NAME || "dev.devops-blogs.net";
+const appDomainName = process.env.APP_DOMAIN_NAME || "app1.example.com";
+const route53HostedZoneName = process.env.ROUTE53_HOSTED_ZONE_NAME || "dev.example.com";
 const appPort = parseInt(process.env.APP_PORT || "80");
 const app1ContainerImageTag = process.env.APP1_CONTAINER_IMAGE_TAG || "latest"; 
 
@@ -49,6 +49,7 @@ const commonResourceStack = new CommonResourceStack(
   remoteBackendDynamoDBTableName,
   networkingStack.vpcId,
   networkingStack.publicSubnetIds,
+  appDomainName,
   route53HostedZoneName
 );
 
