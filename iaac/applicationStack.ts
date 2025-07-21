@@ -44,17 +44,23 @@ export class ApplicationStack extends TerraformStack {
       dynamodbTable: `${remoteBackendDynamoDBTableName}`,
     });
 
-    // Providers
+    ///////////////
+    // Providers //
+    ///////////////
     new AwsProvider(this, "aws", {
       region: region,
     });
 
-    // Data Source for ECR Repository
+    ////////////////////////////////////
+    // Data Source for ECR Repository //
+    ////////////////////////////////////
     const app1EcrRepository = new DataAwsEcrRepository(this, "ecr_repository", {
       name: Token.asString(app1EcrName),
     });
 
-    // IAM Role for ECS Task Execution
+    /////////////////////////////////////
+    // IAM Role for ECS Task Execution //
+    /////////////////////////////////////
     const app1TaskExecutionRole = new IamRole(this, "ecs/task-execution", {
       name: `${projectName}-${environmentName}-ecs-task-execution-role`,
       path: "/ecs/",
@@ -153,7 +159,10 @@ export class ApplicationStack extends TerraformStack {
       }
     });
 
-    // ECS Task Definition
+
+    /////////////////////////
+    // ECS Task Definition //
+    /////////////////////////
     const app1TaskDefinition = new EcsTaskDefinition(this, "ecs_task_definition", {
       family: `${projectName}-${environmentName}-task`,
       networkMode: "awsvpc",
@@ -184,8 +193,9 @@ export class ApplicationStack extends TerraformStack {
       }
     });
 
-
-    // Security Group for ECS Service
+    ////////////////////////////////////
+    // Security Group for ECS Service //
+    ////////////////////////////////////
     const securityGroup = new SecurityGroup(this, "ecs_security_group", {
       name: `${projectName}-${environmentName}-ecs-security-group`,
       description: "Security group for ECS service",
@@ -213,6 +223,9 @@ export class ApplicationStack extends TerraformStack {
       }
     });
 
+    ////////////////////////////////
+    // Load Balancer Target Group //
+    ////////////////////////////////
     const targetGroup = new LbTargetGroup(this, "load_balancer_target_group", {
       lifecycle: {
         createBeforeDestroy: true,
@@ -231,6 +244,10 @@ export class ApplicationStack extends TerraformStack {
       }
     });
 
+
+    /////////////////////////////////
+    // Load Balancer Listener Rule //
+    /////////////////////////////////
     new LbListenerRule(this, "load_balancer_listener_rule", {
       listenerArn: Token.asString(loadBalancerListenerHttpsArn),
       priority: 100,
@@ -243,7 +260,7 @@ export class ApplicationStack extends TerraformStack {
       condition: [
         {
           hostHeader: {
-            values: [`${appDomainName}`] // Replace with your domain
+            values: [`${appDomainName}`]
           }
         }
       ],
@@ -253,6 +270,9 @@ export class ApplicationStack extends TerraformStack {
       }
     });
 
+    ////////////////////////////
+    // ECS Service Definition //
+    ////////////////////////////
     new EcsService(this, "ecs_service", {
       name: `${projectName}-${environmentName}-ecs-service`,
       cluster: Token.asString(ecsClusterName),
@@ -261,7 +281,7 @@ export class ApplicationStack extends TerraformStack {
       launchType: "FARGATE",
       networkConfiguration: {
         subnets: Token.asList(privateSubnetIds),
-        securityGroups: [securityGroup.id], // Replace with actual security group ID
+        securityGroups: [securityGroup.id],
         assignPublicIp: false
       },
       loadBalancer: [
@@ -277,6 +297,10 @@ export class ApplicationStack extends TerraformStack {
       },
     });
 
+
+    ////////////////////////////////////////
+    // Route53 DNS Record for Application //
+    ////////////////////////////////////////
     const zone = new DataAwsRoute53Zone(this, "route53_zone", {
       name: route53HostedZoneName,
       privateZone: false,

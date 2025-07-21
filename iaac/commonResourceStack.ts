@@ -31,12 +31,16 @@ export class CommonResourceStack extends TerraformStack {
   ) {
     super(scope, id);
 
-    // Providers
+    ///////////////
+    // Providers //
+    ///////////////
     new AwsProvider(this, "aws", {
       region: region
     });
 
-    // Backend configuration
+    ///////////////////////////
+    // Backend configuration //
+    ///////////////////////////
     new S3Backend(this, {
       bucket: `${remoteBackendBucketName}`,
       key: `${environmentName}/common-resource.tfstate`,
@@ -45,14 +49,18 @@ export class CommonResourceStack extends TerraformStack {
       dynamodbTable: `${remoteBackendDynamoDBTableName}`,
     });
 
-    // Route53 Zone Data Source
+    //////////////////////////////
+    // Route53 Zone Data Source //
+    //////////////////////////////
     const zone = new DataAwsRoute53Zone(this, "route53_zone", {
       name: `${route53HostedZoneName}`,
       privateZone: false,
     });
 
 
-    // ACM Certificate
+    /////////////////////
+    // ACM Certificate //
+    /////////////////////
     const acmCertificate = new AcmCertificate(this, "acm_certificate", {
       lifecycle: {
         createBeforeDestroy: true,
@@ -75,14 +83,16 @@ export class CommonResourceStack extends TerraformStack {
       allowOverwrite: true,
     });
 
-    // ECS Cluster
+    /////////////////
+    // ECS Cluster //
+    /////////////////
     const cluster = new EcsCluster(this, "ecs_cluster", {
       name: `${projectName}-${environmentName}-ecs-cluster`,
     });
 
     new EcsClusterCapacityProviders(this, "ecs_cluster_capacity_providers", {
       clusterName: cluster.name,
-      capacityProviders: ["FARGATE_SPOT"],
+      capacityProviders: environmentName === "production" ? ["FARGATE"] : ["FARGATE_SPOT"],
       defaultCapacityProviderStrategy: environmentName === "production" ? [
         {
           capacityProvider: "FARGATE",
@@ -98,7 +108,9 @@ export class CommonResourceStack extends TerraformStack {
       ],
     });
 
-    // Load Balancer 
+    ///////////////////
+    // Load Balancer //
+    ///////////////////
     const securityGroupLb = new SecurityGroup(this, "lb_security_group", {
       name: `${projectName}-${environmentName}-lb-security-group`,
       description: "Security group for Load Balancer",
