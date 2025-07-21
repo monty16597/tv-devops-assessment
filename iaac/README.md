@@ -25,7 +25,7 @@ graph TD;
 The project files are organized as follows:
 
 ```
-app-iaac/
+iaac/
 ├── main.ts               # Entry point for the CDKTF application. Initializes all stacks.
 ├── applicationStack.ts   # Defines the Application Stack.
 ├── ecrStack.ts           # Defines the ECR Stack for managing Docker container images.
@@ -82,8 +82,6 @@ These files store environment-specific configurations:
   * `.env.production`: For the production environment.
 
 Common environment variables found in these files include:
-
-  * `APP_ENV`: Specifies the deployment environment (e.g., `development`, `staging`, `production`).
   * `AWS_REGION`: The AWS region where resources will be deployed (e.g., `us-east-1`).
   * `PROJECT_NAME`: A unique identifier for your project.
   * `REMOTE_BACKEND_BUCKET_NAME`: The S3 bucket used for storing Terraform's state remotely.
@@ -91,6 +89,10 @@ Common environment variables found in these files include:
   * `APP_PORT`: The port on which your application runs.
   * `APP_DOMAIN_NAME`: The domain name assigned to your application.
   * `ROUTE53_HOSTED_ZONE_NAME`: The Route 53 hosted zone where DNS records for your application will be managed.
+
+### Environment Variables
+  * `APP1_CONTAINER_IMAGE_TAG`: The Docker image tag for the application (e.g., `latest`, `staging`, `production`).
+  * `APP_ENV`: The environment in which the application is being deployed (e.g., `development`, `staging`, `production`).
 
 ### Installation and Usage on Local Machine
 
@@ -107,7 +109,7 @@ Before you begin, ensure you have the following installed:
 
 #### Steps to Run
 
-1.  **Install Dependencies**: Navigate to the `app-iaac/` directory and run:
+1.  **Install Dependencies**: Navigate to the `iaac/` directory and run:
 
     ```bash
     npm install
@@ -164,5 +166,5 @@ Before you begin, ensure you have the following installed:
     To remove the deployed infrastructure, use:
 
     ```bash
-    APP_ENV=development APP1_CONTAINER_IMAGE_TAG=<GITHUB_COMMIT_HASH> cdktf destroy Application Networking CommonResource EcrStack
+    APP_ENV=development cdktf destroy Application Networking CommonResource EcrStack
     ```

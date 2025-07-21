@@ -1,0 +1,151 @@
+name: CD
+run-name: CD running for ${{ github.sha }} on ${{ github.ref_name }}
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - production
+
+env:
+  APP_DIR: ${{ github.workspace }}/app
+  INFRA_DIR: ${{ github.workspace }}/iaac
+  CONTAINER_IMAGE_TAG: ${{ github.sha }}
+  APP_ENV: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  Ecr:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.12.2"
+          terraform_wrapper: false
+
+      - name: install cdktf
+        run: |
+          npm install -g cdktf-cli
+
+      - name: Install NPM Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: yarn install
+
+      - name: Install CDK Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: npx cdktf-cli get
+
+      - name: Apply IaaC changes
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.INFRA_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: "EcrStack"
+          githubToken: ${{ github.token }}
+
+  Build:
+    needs: Ecr
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.APP_DIR }}
+          file: ${{ env.APP_DIR }}/Dockerfile
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ vars.AWS_ECR_REPO_NAME }}:${{ github.sha }}
+
+  Deploy:
+    needs: Build
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.12.2"
+          terraform_wrapper: false
+
+      - name: install cdktf
+        run: |
+          npm install -g cdktf-cli
+
+      - name: Install NPM Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: yarn install
+
+      - name: Install CDK Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: npx cdktf-cli get
+
+      - name: Apply IaaC changes
+        uses: hashicorp/terraform-cdk-action@v10
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.INFRA_DIR }}
+          mode: auto-approve-apply
+          commentOnPr: false
+          stackName: "*"
+          githubToken: ${{ github.token }}
+        env:
+          APP1_CONTAINER_IMAGE_TAG: ${{ github.sha }}
