@@ -11,6 +11,7 @@ env:
   APP_DIR: ${{ github.workspace }}/app
   INFRA_DIR: ${{ github.workspace }}/iaac
   CONTAINER_IMAGE_TAG: ${{ github.sha }}
+  APP_ENV: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
 
 permissions:
   contents: read

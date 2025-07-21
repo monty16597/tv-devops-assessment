@@ -9,6 +9,7 @@ on:
 env:
   APP_DIR: ${{ github.workspace }}/app
   INFRA_DIR: ${{ github.workspace }}/iaac
+  APP_ENV: ${{ github.base_ref == 'main' && 'development' || github.base_ref }}
 
 permissions:
   contents: read
