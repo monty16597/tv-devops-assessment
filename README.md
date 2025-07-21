@@ -12,7 +12,6 @@ Local Setup -> [README.md](iaac/README.md#local-development-setup)
 - `.github/workflows/cd.yaml`: CD pipeline for the application and IaaC.
 
 ### Flow:
-
 #### GitFlow
 
 ```mermaid
@@ -95,9 +94,9 @@ flowchart TD
     end
 ```
 
-
 ### Installation
 ### Steps
+- Create a S3 Bucket and DynamoDB Table for Terraform state management in your AWS account using aws CLI mentioned at [here](iaac/README.md#steps-to-run).
 - Create three diifferent environments in Github Repo Settings:
   - `development`
   - `staging`
@@ -108,9 +107,8 @@ flowchart TD
 - Add below env variables in each environment:
   - `AWS_REGION`: e.g., `us-east-1`
   - `AWS_ECR_REPO_NAME`: Your ECR repository name as per the environment
-  - `AWS_ACCOUNT_ID`: Your AWS account ID
 - create a new branch from `main` and pull your changes in your machine
-- update the `.env` files in the `iaac` directory with your specific values [here](iaac/README.md#env-files) and push the changes to your branch
+- update the `.env` files in the `iaac` directory with your specific values as mentioned [here](iaac/README.md#env-files) and push the changes to your branch
 - create a pull request to merge your changes into the `main` branch
 - once the pull request is created, the CI pipeline will be triggered automatically
 - after the CI pipeline passes, you can merge the pull request into the `main` branch
