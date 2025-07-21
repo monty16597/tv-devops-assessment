@@ -1,0 +1,101 @@
+name: CI
+run-name: CI running for ${{ github.event.pull_request.number }} on ${{ github.ref_name }}
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+      - production
+env:
+  APP_DIR: ${{ github.workspace }}/app
+  INFRA_DIR: ${{ github.workspace }}/iaac
+  APP_ENV: ${{ github.base_ref == 'main' && 'development' || github.base_ref }}
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  Synth-Test:
+    environment:
+      name: ${{ github.base_ref == 'main' && 'development' || github.base_ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.12.2"
+          terraform_wrapper: false
+
+      - name: install cdktf
+        run: |
+          npm install -g cdktf-cli
+
+      - name: Install NPM Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: yarn install
+
+      - name: Install CDK Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: npx cdktf-cli get
+
+      - name: Test the synth
+        uses: hashicorp/terraform-cdk-action@v10
+        id: build-test
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.INFRA_DIR }}
+          mode: synth-only
+          githubToken: ${{ github.token }}
+          suppressOutput: true
+
+  Image-Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Test
+        id: build-test
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.APP_DIR }}
+          file: ${{ env.APP_DIR }}/Dockerfile
+          push: false
+          tags: app:latest
+
+      - name: Comment on Pull Request
+        uses: thollander/actions-comment-pull-request@v3
+        if: always()
+        with:
+          message: |
+            ```markdown
+                | Step       | Status  |
+                | ---------- | ------- |
+                | Build Test | ${{ steps.build-test.outcome }} |
+            ```
+          comment-tag: "build-status"
+          mode: recreate

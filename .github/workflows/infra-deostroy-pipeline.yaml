@@ -1,0 +1,64 @@
+name: Destroy Pipeline
+run-name: Destroying Infrastructure for ${{ github.ref_name }}
+on:
+  workflow_dispatch:
+env:
+  APP_DIR: ${{ github.workspace }}/app
+  INFRA_DIR: ${{ github.workspace }}/iaac
+  APP_ENV: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  Synth-Test:
+    environment:
+      name: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.12.2"
+          terraform_wrapper: false
+
+      - name: install cdktf
+        run: |
+          npm install -g cdktf-cli
+
+      - name: Install NPM Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: yarn install
+
+      - name: Install CDK Dependencies
+        working-directory: ${{ env.INFRA_DIR }}
+        run: npx cdktf-cli get
+
+      - name: Destroy the infrastructure
+        uses: hashicorp/terraform-cdk-action@v10
+        id: build-test
+        with:
+          cdktfVersion: 0.21.0
+          terraformVersion: 1.12.2
+          workingDirectory: ${{ env.INFRA_DIR }}
+          mode: auto-approve-destroy
+          githubToken: ${{ github.token }}
+          commentOnPr: false
+          stackName: "*"

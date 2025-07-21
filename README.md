@@ -15,26 +15,31 @@ Local Setup -> [README.md](iaac/README.md#local-development-setup)
 #### GitFlow
 
 ```mermaid
+---
+config:
+  logLevel: 'debug'
+  theme: 'base'
+  gitGraph:
+    showBranches: true
+    showCommitLabel: true
+    mainBranchName: 'production'
+---
 gitGraph
     commit
     commit
+    branch staging
+    commit
+    branch main
+    commit
     branch feature
-    checkout feature
     commit
     checkout main
     merge feature
-    commit
-    branch staging
     checkout staging
-    commit
-    checkout main
-    merge staging
-    commit
-    branch production
+    merge main
     checkout production
-    commit
-    checkout main
-    merge production
+    merge staging
+    
 ```
 
 #### Triggers

@@ -7,12 +7,12 @@
 
 ### Steps
 
-1. Go to the `app` directory
-2. **Clone the Repository**
+1. **Clone the Repository**
    ```bash
    git clone https://github.com/yourusername/tv-devops-assessment.git
    cd tv-devops-assessment
    ```
+2. Go to the `app` directory
 3. **Build and Start the Application**
    ```bash
    docker-compose up --build
