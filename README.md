@@ -3,7 +3,7 @@
 Local Setup -> [README.md](app/README.md#local-development-setup)
 
 ## Iaac
-Local Setup -> [README.md](iaac/README.md#local-development-setup)
+Local Setup -> [README.md](iaac/README.md#installation-and-usage-on-local-machine)
 
 ## CICD
 
