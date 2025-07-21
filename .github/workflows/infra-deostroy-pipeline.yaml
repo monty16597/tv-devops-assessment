@@ -13,7 +13,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  Synth-Test:
+  Destroy:
     environment:
       name: ${{ github.ref_name == 'main' && 'development' || github.ref_name }}
     runs-on: ubuntu-latest
